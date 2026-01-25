@@ -16,7 +16,7 @@ Shorten, obfuscate, and secure URLs into compact, opaque links. Everything happe
 
 ### Encoding (creating short links)
 
-1. **Prepare the link**: Inputs are trimmed and given a protocol (https://) if they’re missing one.
+1. **Prepare the link**: Inputs are trimmed and checked for a protocol (`http://` or `https://`).
 2. **Pack the text**: Common URL fragments (domains, query keys, path pieces) are swapped with tiny markers and the rest of the text is left as-is. This keeps the link readable to the app but shorter overall.
 3. **Compress and encode**: The packed link is run through Brotli compression and then converted to URL-safe Base64. A short prefix (`~`, `!`, or `.`) is attached to indicate which packing strategy produced the best result.
 4. **Optionally encrypt**: When you provide a password, the encoded payload is encrypted with AES-GCM (PBKDF2 key derivation) and prefixed with `@`.

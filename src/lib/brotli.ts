@@ -13,6 +13,10 @@ if (browser) {
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
+/**
+ * Brotli custom dictionary.
+ * Big + append-only is fine here; it's not part of the token format.
+ */
 const URL_DICTIONARY = [
 	'https://',
 	'http://',
@@ -151,8 +155,15 @@ const ENCRYPTION_SALT_BYTES = 16;
 const ENCRYPTION_IV_BYTES = 12;
 const ENCRYPTION_ITERATIONS = 100_000;
 
-// Append-only; token indices are part of the encoding format.
+/**
+ * Improvement (3): split “token set” from dictionary.
+ * Tokens are the *format* (compact markers), so keep them curated and high-impact.
+ * Let the dictionary handle the long tail.
+ *
+ * NOTE: Since you said not to worry about backwards compatibility, this list is free to change.
+ */
 const TOKEN_STRINGS = [
+	// Schemes / common prefixes
 	'https://www.',
 	'http://www.',
 	'https://',
@@ -160,6 +171,16 @@ const TOKEN_STRINGS = [
 	'www.',
 	'://',
 	'/?',
+
+	// Common separators / fragments
+	'/',
+	'?',
+	'&',
+	'=',
+	'#',
+	'#/',
+
+	// Common TLDs (small set only)
 	'.com',
 	'.org',
 	'.net',
@@ -179,30 +200,28 @@ const TOKEN_STRINGS = [
 	'.fr',
 	'.jp',
 	'.cn',
-	'.edu',
-	'.gov',
+
+	// Big hitters: hosts
 	'github.com',
 	'gitlab.com',
 	'youtu.be',
 	'youtube.com',
-	'google',
-	'youtube',
-	'facebook',
-	'instagram',
-	'twitter',
-	'amazon',
-	'wikipedia',
-	'reddit',
+	'google.com',
+	'facebook.com',
+	'instagram.com',
 	'twitter.com',
 	'x.com',
+	'amazon.com',
+	'wikipedia.org',
 	'reddit.com',
+
+	// Subdomain-ish
 	'docs.',
 	'api.',
 	'cdn.',
 	'static.',
-	'blog.',
-	'm.',
-	'amp.',
+
+	// Tracking / common keys
 	'utm_source=',
 	'utm_medium=',
 	'utm_campaign=',
@@ -211,8 +230,6 @@ const TOKEN_STRINGS = [
 	'utm_id=',
 	'utm_name=',
 	'ref=',
-	'ref_src=',
-	'ref_url=',
 	'source=',
 	'fbclid=',
 	'gclid=',
@@ -229,6 +246,8 @@ const TOKEN_STRINGS = [
 	'si=',
 	'redirect=',
 	'redirect_uri=',
+	'return=',
+	'callback=',
 	'state=',
 	'&state=',
 	'code=',
@@ -237,6 +256,7 @@ const TOKEN_STRINGS = [
 	'&client_id=',
 	'token=',
 	'&token=',
+	'session=',
 	'per_page=',
 	'limit=',
 	'offset=',
@@ -247,16 +267,15 @@ const TOKEN_STRINGS = [
 	'query=',
 	'tag=',
 	'category=',
+	'locale=',
+	'format=',
+	'download=',
+	'file=',
+	'path=',
 	'next=',
-	'raw.githubusercontent.com',
-	'npmjs.com',
-	'stackoverflow.com',
-	'stackexchange.com',
-	'docs.google.com',
-	'drive.google.com',
-	'vercel.app',
-	'supabase.co',
-	's3.amazonaws.com',
+	'continue=',
+
+	// Common paths
 	'assets/',
 	'images/',
 	'img/',
@@ -277,6 +296,8 @@ const TOKEN_STRINGS = [
 	'/tag/',
 	'/commit/',
 	'/wiki/',
+
+	// Common files
 	'index.html',
 	'robots.txt',
 	'sitemap.xml',
@@ -284,9 +305,43 @@ const TOKEN_STRINGS = [
 ];
 
 const TOKEN_BYTES = TOKEN_STRINGS.map((token) => textEncoder.encode(token));
-const TOKEN_ENTRIES = TOKEN_STRINGS.map((value, index) => ({ value, index })).sort(
-	(a, b) => b.value.length - a.value.length
-);
+
+/**
+ * Improvement (1): Trie for O(n) longest-prefix matching.
+ */
+type TrieNode = {
+	next: Map<string, TrieNode>;
+	tokenIndex: number | null;
+};
+
+function makeTrieNode(): TrieNode {
+	return { next: new Map(), tokenIndex: null };
+}
+
+function buildTokenTrie(tokens: string[]): TrieNode {
+	const root = makeTrieNode();
+
+	for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex++) {
+		const token = tokens[tokenIndex];
+		let node = root;
+
+		for (let j = 0; j < token.length; j++) {
+			const ch = token[j];
+			let child = node.next.get(ch);
+			if (!child) {
+				child = makeTrieNode();
+				node.next.set(ch, child);
+			}
+			node = child;
+		}
+
+		node.tokenIndex = tokenIndex;
+	}
+
+	return root;
+}
+
+const TOKEN_TRIE = buildTokenTrie(TOKEN_STRINGS);
 
 type WebCryptoBytes = Uint8Array<ArrayBuffer>;
 
@@ -395,30 +450,45 @@ async function compressWithDictionary(inputBytes: Uint8Array): Promise<Uint8Arra
 	});
 }
 
+/**
+ * Tokenize a URL into a byte stream:
+ * - tokens become single bytes in [0x80..)
+ * - all other bytes are UTF-8, with escaping for 0x7f and >= 0x80
+ */
 function tokenizeUrl(input: string): Uint8Array {
 	const out: number[] = [];
 	let i = 0;
 
 	while (i < input.length) {
-		let matchedIndex = -1;
-		let matchedLength = 0;
+		// Longest trie match starting at i
+		let node: TrieNode | undefined = TOKEN_TRIE;
+		let j = i;
 
-		for (const token of TOKEN_ENTRIES) {
-			if (input.startsWith(token.value, i)) {
-				matchedIndex = token.index;
-				matchedLength = token.value.length;
-				break;
+		let bestTokenIndex: number | null = null;
+		let bestEnd = i;
+
+		while (node && j < input.length) {
+			const ch = input[j];
+			node = node.next.get(ch);
+			if (!node) break;
+
+			j += 1;
+
+			if (node.tokenIndex !== null) {
+				bestTokenIndex = node.tokenIndex;
+				bestEnd = j;
 			}
 		}
 
-		if (matchedIndex >= 0) {
-			out.push(TOKEN_BASE + matchedIndex);
-			i += matchedLength;
+		if (bestTokenIndex !== null) {
+			out.push(TOKEN_BASE + bestTokenIndex);
+			i = bestEnd;
 			continue;
 		}
 
 		const codePoint = input.codePointAt(i);
 		if (codePoint === undefined) break;
+
 		const char = String.fromCodePoint(codePoint);
 		const bytes = textEncoder.encode(char);
 
@@ -469,35 +539,46 @@ function detokenizeUrl(data: Uint8Array): string {
 }
 
 /**
- * Compresses a string with Brotli + encodes using Base64.
+ * Compresses a string with Brotli + encodes using Base64 (url-safe).
+ * Chooses the smallest representation among several candidates.
  */
 async function encodePlain(input: string): Promise<string> {
 	const inputBytes = textEncoder.encode(input);
 	const tokenizedBytes = tokenizeUrl(input);
 
-	const [withDict, withoutDict, tokenizedCompressed] = await Promise.all([
+	// Improvement (2): also try tokenized+dictionary compression.
+	const [withDict, withoutDict, tokenizedWithDict, tokenizedWithoutDict] = await Promise.all([
 		compressWithDictionary(inputBytes),
 		compress(inputBytes, { quality: 11 }),
+		compressWithDictionary(tokenizedBytes),
 		compress(tokenizedBytes, { quality: 11 })
 	]);
 
+	// Baseline: compressed (dict or not) without prefix.
 	const bestCompressed = withDict.length <= withoutDict.length ? withDict : withoutDict;
 	const compressedEncoded = urlEncode(bestCompressed);
 
-	const tokenizedCompressedCandidate = `${TOKEN_PREFIX}${urlEncode(tokenizedCompressed)}`;
+	// Choose best tokenized compressed (dict or not) without prefix.
+	const bestTokenzied =
+		tokenizedWithDict.length <= tokenizedWithoutDict.length
+			? tokenizedWithDict
+			: tokenizedWithoutDict;
+
+	// Tokenized variants have prefixes.
+	const tokenizedCompressedCandidate = `${TOKEN_PREFIX}${urlEncode(bestTokenzied)}`;
 	const tokenizedRawCandidate = `${TOKEN_RAW_PREFIX}${urlEncode(tokenizedBytes)}`;
 
-	const rawEncoded = urlEncode(inputBytes);
-	const rawCandidate = `${RAW_PREFIX}${rawEncoded}`;
+	// Raw UTF-8 with prefix (no compression).
+	const rawCandidate = `${RAW_PREFIX}${urlEncode(inputBytes)}`;
 
 	let best = compressedEncoded;
 
 	// Debug
 	// console.log(
-	// 	compressedEncoded.length,
-	// 	tokenizedCompressedCandidate.length,
-	// 	tokenizedRawCandidate.length,
-	// 	rawCandidate.length
+	// 	`Compressed: ${compressedEncoded.length}\n`,
+	// 	`Tokenized Compressed: ${tokenizedCompressedCandidate.length}\n`,
+	// 	`Tokenized Raw: ${tokenizedRawCandidate.length}\n`,
+	// 	`Raw: ${rawCandidate.length}`
 	// );
 
 	if (tokenizedCompressedCandidate.length < best.length) best = tokenizedCompressedCandidate;
@@ -508,7 +589,7 @@ async function encodePlain(input: string): Promise<string> {
 }
 
 /**
- * Decodes from Base64 + decompresses with Brotli back to the original string.
+ * Decodes back to the original string.
  */
 async function decodePlain(data: string): Promise<string> {
 	if (data.startsWith(RAW_PREFIX)) {
@@ -518,7 +599,7 @@ async function decodePlain(data: string): Promise<string> {
 
 	if (data.startsWith(TOKEN_PREFIX)) {
 		const compressedBytes = urlDecode(data.slice(TOKEN_PREFIX.length));
-		const decompressed = await decompress(compressedBytes);
+		const decompressed: Uint8Array = await decompress(compressedBytes);
 		return detokenizeUrl(decompressed);
 	}
 
@@ -534,8 +615,8 @@ async function decodePlain(data: string): Promise<string> {
 }
 
 /**
- * Compresses a string with Brotli + encodes using Base64.
- * When a password is provided, the encoded payload is encrypted with AES-GCM.
+ * Compress + encode.
+ * If a password is provided, the encoded payload is encrypted with AES-GCM (PBKDF2 key derivation).
  */
 export async function encode(input: string, password?: string): Promise<string> {
 	const plain = await encodePlain(input);
@@ -546,8 +627,8 @@ export async function encode(input: string, password?: string): Promise<string> 
 }
 
 /**
- * Decodes from Base64 + decompresses with Brotli back to the original string.
- * When the payload is password-protected, a password must be supplied.
+ * Decode.
+ * If the payload is password-protected, a password must be supplied.
  */
 export async function decode(data: string, password?: string): Promise<string> {
 	if (data.startsWith(PASSWORD_PREFIX)) {
