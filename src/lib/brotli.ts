@@ -66,31 +66,23 @@ const TOKEN_STRINGS = [
 	'.dev',
 	'.app',
 	'.ai',
-	'.gg',
 	'.me',
 	'.tv',
-	'.ly',
 	'.to',
 	'.us',
 	'.uk',
 	'.de',
 	'.fr',
 	'.jp',
-	'.cn',
 
 	// Structural host / infra patterns
-	'www2.',
 	'api.',
 	'cdn.',
 	'static.',
 	'assets.',
 	'media.',
 	'img.',
-	'files.',
-	'raw.',
-	'content.',
 	'm.',
-	'amp.',
 	'blog.',
 	'news.',
 	'shop.',
@@ -103,12 +95,15 @@ const TOKEN_STRINGS = [
 	'utm_content=',
 	'utm_term=',
 	'utm_id=',
+	'utm_',
+	'&utm_source=',
+	'&utm_medium=',
 	'ref=',
 	'source=',
 	'fbclid=',
 	'gclid=',
-	'msclkid=',
 	'id=',
+	'sid=',
 	'lang=',
 	'page=',
 	'&page=',
@@ -175,11 +170,15 @@ const TOKEN_STRINGS = [
 	'/search/',
 	'/settings/',
 
-	// Common files
+	// Common files / extensions
 	'index.html',
 	'robots.txt',
 	'sitemap.xml',
-	'favicon.ico'
+	'favicon.ico',
+	'.html',
+	'.php',
+	'.js',
+	'.css'
 ];
 
 const TOKEN_BYTES = TOKEN_STRINGS.map((token) => textEncoder.encode(token));
