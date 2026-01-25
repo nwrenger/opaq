@@ -15,129 +15,8 @@ const textDecoder = new TextDecoder();
 
 /**
  * Brotli custom dictionary.
- * Big + append-only is fine here; it's not part of the token format.
  */
-const URL_DICTIONARY = [
-	'https://',
-	'http://',
-	'www.',
-	'.com',
-	'.org',
-	'.net',
-	'.io',
-	'.co',
-	'.dev',
-	'.app',
-	'.ai',
-	'.gg',
-	'.me',
-	'.tv',
-	'.ly',
-	'.to',
-	'.us',
-	'.uk',
-	'.de',
-	'.fr',
-	'.jp',
-	'.cn',
-	'/',
-	'?',
-	'&',
-	'=',
-	'utm_source=',
-	'utm_medium=',
-	'utm_campaign=',
-	'utm_content=',
-	'utm_term=',
-	'ref=',
-	'source=',
-	'fbclid=',
-	'gclid=',
-	'id=',
-	'lang=',
-	'page=',
-	'view=',
-	'q=',
-	'v=',
-	'://',
-	'#',
-	'#/',
-	'.edu',
-	'.gov',
-	'.biz',
-	'.info',
-	'.xyz',
-	'.site',
-	'.tech',
-	'.cloud',
-	'.store',
-	'.shop',
-	'.online',
-	'.co.uk',
-	'.com.au',
-	'.co.jp',
-	'github.com',
-	'google.com',
-	'youtube.com',
-	'facebook.com',
-	'instagram.com',
-	'twitter.com',
-	'amazon.com',
-	'wikipedia.org',
-	'reddit.com',
-	'docs.',
-	'api.',
-	'cdn.',
-	'static.',
-	'assets/',
-	'images/',
-	'img/',
-	'css/',
-	'js/',
-	'fonts/',
-	'/api/',
-	'/v1/',
-	'/v2/',
-	'/v3/',
-	'/v4/',
-	'utm_id=',
-	'utm_name=',
-	'ref_src=',
-	'ref_url=',
-	'referrer=',
-	'redirect=',
-	'redirect_uri=',
-	'return=',
-	'callback=',
-	'state=',
-	'code=',
-	'scope=',
-	'client_id=',
-	'client_secret=',
-	'session=',
-	'token=',
-	'per_page=',
-	'limit=',
-	'offset=',
-	'sort=',
-	'order=',
-	'filter=',
-	'search=',
-	'query=',
-	'tag=',
-	'category=',
-	'locale=',
-	'format=',
-	'download=',
-	'file=',
-	'path=',
-	'next=',
-	'continue=',
-	'index.html',
-	'robots.txt',
-	'sitemap.xml',
-	'favicon.ico'
-].join('\n');
+const URL_DICTIONARY = ['/', '?', '&', '=', '#', '%', '+', '-', '_', '~', '@', ':', '.'].join('\n');
 
 const URL_DICTIONARY_BYTES = textEncoder.encode(URL_DICTIONARY);
 const URL_DICTIONARY_I8 = new Int8Array(URL_DICTIONARY_BYTES);
@@ -156,11 +35,8 @@ const ENCRYPTION_IV_BYTES = 12;
 const ENCRYPTION_ITERATIONS = 100_000;
 
 /**
- * Improvement (3): split “token set” from dictionary.
  * Tokens are the *format* (compact markers), so keep them curated and high-impact.
  * Let the dictionary handle the long tail.
- *
- * NOTE: Since you said not to worry about backwards compatibility, this list is free to change.
  */
 const TOKEN_STRINGS = [
 	// Schemes / common prefixes
@@ -168,6 +44,7 @@ const TOKEN_STRINGS = [
 	'http://www.',
 	'https://',
 	'http://',
+	'//',
 	'www.',
 	'://',
 	'/?',
@@ -180,7 +57,7 @@ const TOKEN_STRINGS = [
 	'#',
 	'#/',
 
-	// Common TLDs (small set only)
+	// Common TLDs (small, high-frequency set)
 	'.com',
 	'.org',
 	'.net',
@@ -201,49 +78,46 @@ const TOKEN_STRINGS = [
 	'.jp',
 	'.cn',
 
-	// Big hitters: hosts
-	'github.com',
-	'gitlab.com',
-	'youtu.be',
-	'youtube.com',
-	'google.com',
-	'facebook.com',
-	'instagram.com',
-	'twitter.com',
-	'x.com',
-	'amazon.com',
-	'wikipedia.org',
-	'reddit.com',
-
-	// Subdomain-ish
-	'docs.',
+	// Structural host / infra patterns
+	'www2.',
 	'api.',
 	'cdn.',
 	'static.',
+	'assets.',
+	'media.',
+	'img.',
+	'files.',
+	'raw.',
+	'content.',
+	'm.',
+	'amp.',
+	'blog.',
+	'news.',
+	'shop.',
+	'store.',
 
-	// Tracking / common keys
+	// Tracking / query keys (ecosystem-wide)
 	'utm_source=',
 	'utm_medium=',
 	'utm_campaign=',
 	'utm_content=',
 	'utm_term=',
 	'utm_id=',
-	'utm_name=',
 	'ref=',
 	'source=',
 	'fbclid=',
 	'gclid=',
+	'msclkid=',
 	'id=',
 	'lang=',
 	'page=',
 	'&page=',
-	'view=',
 	'q=',
-	'v=',
 	's=',
 	't=',
-	'feature=',
-	'si=',
+	'v=',
+	'type=',
+	'mode=',
 	'redirect=',
 	'redirect_uri=',
 	'return=',
@@ -275,27 +149,31 @@ const TOKEN_STRINGS = [
 	'next=',
 	'continue=',
 
-	// Common paths
+	// Common paths (framework / repo / API heavy)
 	'assets/',
+	'static/',
 	'images/',
 	'img/',
 	'css/',
 	'js/',
 	'fonts/',
+	'media/',
 	'/api/',
 	'/v1/',
 	'/v2/',
 	'/v3/',
 	'/v4/',
-	'/blob/',
-	'/tree/',
-	'/raw/',
-	'/issues/',
-	'/pull/',
-	'/releases/',
-	'/tag/',
-	'/commit/',
-	'/wiki/',
+	'/auth/',
+	'/login/',
+	'/logout/',
+	'/callback/',
+	'/oauth/',
+	'/users/',
+	'/posts/',
+	'/comments/',
+	'/tags/',
+	'/search/',
+	'/settings/',
 
 	// Common files
 	'index.html',
@@ -307,7 +185,7 @@ const TOKEN_STRINGS = [
 const TOKEN_BYTES = TOKEN_STRINGS.map((token) => textEncoder.encode(token));
 
 /**
- * Improvement (1): Trie for O(n) longest-prefix matching.
+ * Trie for O(n) longest-prefix matching.
  */
 type TrieNode = {
 	next: Map<string, TrieNode>;
@@ -546,7 +424,6 @@ async function encodePlain(input: string): Promise<string> {
 	const inputBytes = textEncoder.encode(input);
 	const tokenizedBytes = tokenizeUrl(input);
 
-	// Improvement (2): also try tokenized+dictionary compression.
 	const [withDict, withoutDict, tokenizedWithDict, tokenizedWithoutDict] = await Promise.all([
 		compressWithDictionary(inputBytes),
 		compress(inputBytes, { quality: 11 }),
@@ -574,12 +451,12 @@ async function encodePlain(input: string): Promise<string> {
 	let best = compressedEncoded;
 
 	// Debug
-	// console.log(
-	// 	`Compressed: ${compressedEncoded.length}\n`,
-	// 	`Tokenized Compressed: ${tokenizedCompressedCandidate.length}\n`,
-	// 	`Tokenized Raw: ${tokenizedRawCandidate.length}\n`,
-	// 	`Raw: ${rawCandidate.length}`
-	// );
+	console.log(
+		`Compressed: ${compressedEncoded.length}\n`,
+		`Tokenized Compressed: ${tokenizedCompressedCandidate.length}\n`,
+		`Tokenized Raw: ${tokenizedRawCandidate.length}\n`,
+		`Raw: ${rawCandidate.length}`
+	);
 
 	if (tokenizedCompressedCandidate.length < best.length) best = tokenizedCompressedCandidate;
 	if (tokenizedRawCandidate.length < best.length) best = tokenizedRawCandidate;
