@@ -121,7 +121,7 @@
 								<input
 									class="input text-surface-950-50"
 									type="password"
-									autocomplete="new-password"
+									autocomplete="current-password"
 									pattern="^\S+$"
 									required
 									placeholder="Add a password to protect this link..."
