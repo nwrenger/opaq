@@ -127,9 +127,13 @@ const TRACKING_PARAM_NAMES = new Set(
 
 function isTrackingParam(name: string) {
 	const lowered = name.toLowerCase();
+	const normalized = lowered.replace(/-/g, '_'); // utm-social -> utm_social
+
 	return (
 		TRACKING_PARAM_NAMES.has(lowered) ||
-		TRACKING_PARAM_PREFIXES.some((prefix) => lowered.startsWith(prefix))
+		TRACKING_PARAM_NAMES.has(normalized) ||
+		TRACKING_PARAM_PREFIXES.some((prefix) => lowered.startsWith(prefix)) ||
+		TRACKING_PARAM_PREFIXES.some((prefix) => normalized.startsWith(prefix))
 	);
 }
 
