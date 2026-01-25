@@ -17,7 +17,7 @@
 		const usePassword = mode === 'protected';
 		let result = await encode(sanitized, usePassword ? password : undefined);
 
-		generatedUrl = `${page.url.origin}/s?${result}`;
+		generatedUrl = `${page.url.origin}/r?${result}`;
 	}
 
 	let url = $state('');

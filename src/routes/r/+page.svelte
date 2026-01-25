@@ -40,16 +40,16 @@
 	}
 
 	onMount(() => {
-		const s = page.url.searchParams.keys().next().value;
-		if (!s) return;
+		const key = page.url.searchParams.keys().next().value;
+		if (!key) return;
 
-		encoded = s;
-		if (s.startsWith(PASSWORD_PREFIX)) {
+		encoded = key;
+		if (key.startsWith(PASSWORD_PREFIX)) {
 			needsPassword = true;
 			return;
 		}
 
-		void redirectToDecoded(s);
+		void redirectToDecoded(key);
 	});
 </script>
 

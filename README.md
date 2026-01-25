@@ -7,7 +7,7 @@ Obfuscate, compress, and secure URLs into compact, opaque links. Everything happ
 - **Private by design**: Links are transformed inside the browser and never leave the page.
 - **Opaque but friendly**: Output is short enough to share anywhere without revealing the destination.
 - **Password protected**: Optional AES-GCM encryption adds a password gate before redirecting.
-- **Instant redirect**: `/s` links decode themselves and jump to the original page right away.
+- **Instant redirect**: `/r` links decode themselves and jump to the original page right away.
 - **Cleaner links**: Tracking query params such as `utm_*`, `fbclid`, or empty values are stripped automatically.
 - **Installable PWA**: Add it to your home screen and keep using it even if you’re offline.
 - **Clipboard ready**: Copy buttons use a reusable action so they work consistently on desktop and mobile.
@@ -21,7 +21,7 @@ Obfuscate, compress, and secure URLs into compact, opaque links. Everything happ
 2. **Pack the text**: Common URL fragments (domains, query keys, path pieces) are swapped with tiny markers and the rest of the text is left as-is. This keeps the link readable to the app but shorter overall.
 3. **Compress and encode**: The packed link is run through Brotli compression and then converted to URL-safe Base64. A short prefix (`~`, `!`, or `.`) is attached to indicate which packing strategy produced the best result.
 4. **Optionally encrypt**: When you provide a password, the encoded payload is encrypted with AES-GCM (PBKDF2 key derivation) and prefixed with `@`.
-5. **Share**: The finished string becomes the query key for `/s?ENCODED`, giving you a compact link you can paste anywhere.
+5. **Share**: The finished string becomes the query key for `/r?ENCODED`, giving you a compact link you can paste anywhere.
 
 ### Decoding (visiting short links)
 
@@ -39,7 +39,7 @@ src/
 ├─ lib/               # Encoding helpers, clipboard action, shared UI
 ├─ routes/
 │  ├─ +page.svelte    # Main encoding UI
-│  ├─ s/+page.svelte  # Redirector that decodes and navigates
+│  ├─ r/+page.svelte  # Redirector that decodes and navigates
 │  ├─ +layout.svelte  # Layout wrapper
 │  └─ layout.css      # Skeleton/Tailwind theme overrides
 └─ app.html           # Base document + theme + meta tags
