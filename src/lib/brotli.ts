@@ -368,7 +368,6 @@ function detokenizeUrl(data: Uint8Array): string {
 export async function encode(input: string): Promise<string> {
 	const inputBytes = textEncoder.encode(input);
 	const tokenizedBytes = tokenizeUrl(input);
-	console.log(tokenizedBytes);
 
 	const [withDict, withoutDict, tokenizedCompressed] = await Promise.all([
 		compressWithDictionary(inputBytes),
