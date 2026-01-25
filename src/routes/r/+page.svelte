@@ -79,7 +79,6 @@
 						<input
 							class="input text-surface-950-50"
 							type="password"
-							autocomplete="current-password"
 							placeholder="Password"
 							pattern="^\S+$"
 							required
