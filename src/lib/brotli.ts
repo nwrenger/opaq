@@ -451,12 +451,12 @@ async function encodePlain(input: string): Promise<string> {
 	let best = compressedEncoded;
 
 	// Debug
-	console.log(
-		`Compressed: ${compressedEncoded.length}\n`,
-		`Tokenized Compressed: ${tokenizedCompressedCandidate.length}\n`,
-		`Tokenized Raw: ${tokenizedRawCandidate.length}\n`,
-		`Raw: ${rawCandidate.length}`
-	);
+	// console.log(
+	// 	`Compressed: ${compressedEncoded.length}\n`,
+	// 	`Tokenized Compressed: ${tokenizedCompressedCandidate.length}\n`,
+	// 	`Tokenized Raw: ${tokenizedRawCandidate.length}\n`,
+	// 	`Raw: ${rawCandidate.length}`
+	// );
 
 	if (tokenizedCompressedCandidate.length < best.length) best = tokenizedCompressedCandidate;
 	if (tokenizedRawCandidate.length < best.length) best = tokenizedRawCandidate;
