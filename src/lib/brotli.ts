@@ -66,6 +66,7 @@ const TOKEN_STRINGS = [
 	'.dev',
 	'.app',
 	'.ai',
+	'.gg',
 	'.me',
 	'.tv',
 	'.to',
@@ -170,11 +171,11 @@ const TOKEN_STRINGS = [
 	'/search/',
 	'/settings/',
 
-	// Common files / extensions
-	'index.html',
-	'robots.txt',
-	'sitemap.xml',
-	'favicon.ico',
+	// Common file extensions
+	'.mp4',
+	'.png',
+	'.jpg',
+	'.pdf',
 	'.html',
 	'.php',
 	'.js',
