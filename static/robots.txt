@@ -1,0 +1,7 @@
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Disallow:
+
+Sitemap: https://short.nwrenger.dev/sitemap.xml
+Host: short.nwrenger.dev

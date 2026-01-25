@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+@plugin '@tailwindcss/forms';
+
+@import '@skeletonlabs/skeleton';
+@import '@skeletonlabs/skeleton-svelte';
+@import '@skeletonlabs/skeleton/themes/nosh';
+
+@layer base {
+	html {
+		height: 100%;
+	}
+
+	body {
+		height: 100%;
+		background-attachment: fixed;
+		background-image:
+			radial-gradient(
+				at 0% 25%,
+				color-mix(in oklab, var(--color-primary-500) 10%, transparent) 0px,
+				transparent 30%
+			),
+			radial-gradient(
+				at 15% 6%,
+				color-mix(in oklab, var(--color-success-500) 5%, transparent) 0px,
+				transparent 30%
+			);
+		background-position: center;
+		background-repeat: no-repeat;
+		background-size: cover;
+		overflow-x: hidden;
+	}
+}
