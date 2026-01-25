@@ -1,11 +1,12 @@
 # short
 
-Shorten and obfuscate URLs into compact, opaque links. Everything happens in your browser for instant, private, and secure results. Built with `Svelte` and `Skeleton`.
+Shorten, obfuscate, and secure URLs into compact, opaque links. Everything happens in your browser for instant, private, and secure results. Built with `Svelte` and `Skeleton`.
 
 ## Highlights
 
 - **Private by design**: Links are transformed inside the browser and never leave the page.
 - **Opaque but friendly**: Output is short enough to share anywhere without revealing the destination.
+- **Password protected**: Optional AES-GCM encryption adds a password gate before redirecting.
 - **Instant redirect**: `/s` links decode themselves and jump to the original page right away.
 - **Installable PWA**: Add it to your home screen and keep using it even if you’re offline.
 - **Clipboard ready**: Copy buttons use a reusable action so they work consistently on desktop and mobile.
@@ -18,13 +19,15 @@ Shorten and obfuscate URLs into compact, opaque links. Everything happens in you
 1. **Prepare the link**: Inputs are trimmed and given a protocol (https://) if they’re missing one.
 2. **Pack the text**: Common URL fragments (domains, query keys, path pieces) are swapped with tiny markers and the rest of the text is left as-is. This keeps the link readable to the app but shorter overall.
 3. **Compress and encode**: The packed link is run through Brotli compression and then converted to URL-safe Base64. A short prefix (`~`, `!`, or `.`) is attached to indicate which packing strategy produced the best result.
-4. **Share**: The finished string becomes the query key for `/s?ENCODED`, giving you a compact link you can paste anywhere.
+4. **Optionally encrypt**: When you provide a password, the encoded payload is encrypted with AES-GCM (PBKDF2 key derivation) and prefixed with `@`.
+5. **Share**: The finished string becomes the query key for `/s?ENCODED`, giving you a compact link you can paste anywhere.
 
 ### Decoding (visiting short links)
 
 1. **Read the payload**: grabs the first key from the query string; that key is the encoded payload.
-2. **Reverse the prefix**: Based on the prefix, the app knows whether to simply unpack tokens or to both decompress and unpack.
-3. **Open the destination**: Once the original URL is restored, the page navigates to the decoded url without any server involvement.
+2. **Reverse the prefix**: Based on the prefix, the app knows whether to decrypt, unpack, or decompress.
+3. **Unlock if needed**: Password-protected links prompt for the password before decoding.
+4. **Open the destination**: Once the original URL is restored, the page navigates to the decoded url without any server involvement.
 
 If you want to inspect the exact steps, check `src/lib/brotli.ts` and `src/lib/base64.ts`.
 

@@ -141,9 +141,15 @@ const URL_DICTIONARY_I8 = new Int8Array(URL_DICTIONARY_BYTES);
 const RAW_PREFIX = '~';
 const TOKEN_PREFIX = '!';
 const TOKEN_RAW_PREFIX = '.';
+export const PASSWORD_PREFIX = '@';
 
 const TOKEN_BASE = 0x80;
 const ESCAPE_BYTE = 0x7f;
+
+const ENCRYPTION_VERSION = 1;
+const ENCRYPTION_SALT_BYTES = 16;
+const ENCRYPTION_IV_BYTES = 12;
+const ENCRYPTION_ITERATIONS = 100_000;
 
 // Append-only; token indices are part of the encoding format.
 const TOKEN_STRINGS = [
@@ -282,6 +288,106 @@ const TOKEN_ENTRIES = TOKEN_STRINGS.map((value, index) => ({ value, index })).so
 	(a, b) => b.value.length - a.value.length
 );
 
+type WebCryptoBytes = Uint8Array<ArrayBuffer>;
+
+function concatBytes(...chunks: Uint8Array[]): Uint8Array {
+	let total = 0;
+	for (const chunk of chunks) total += chunk.length;
+
+	const out = new Uint8Array(total);
+	let offset = 0;
+	for (const chunk of chunks) {
+		out.set(chunk, offset);
+		offset += chunk.length;
+	}
+
+	return out;
+}
+
+function toWebCryptoBytes(bytes: Uint8Array): WebCryptoBytes {
+	if (bytes.buffer instanceof ArrayBuffer) {
+		return bytes as WebCryptoBytes;
+	}
+
+	return new Uint8Array(bytes) as WebCryptoBytes;
+}
+
+function requireCrypto(): Crypto {
+	const cryptoRef = globalThis.crypto;
+	if (!browser || !cryptoRef?.subtle) {
+		throw new Error('Web Crypto is unavailable in this environment.');
+	}
+	return cryptoRef;
+}
+
+async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+	const cryptoRef = requireCrypto();
+	const keyMaterial = await cryptoRef.subtle.importKey(
+		'raw',
+		toWebCryptoBytes(textEncoder.encode(password)),
+		'PBKDF2',
+		false,
+		['deriveKey']
+	);
+
+	return cryptoRef.subtle.deriveKey(
+		{
+			name: 'PBKDF2',
+			salt: toWebCryptoBytes(salt),
+			iterations: ENCRYPTION_ITERATIONS,
+			hash: 'SHA-256'
+		},
+		keyMaterial,
+		{ name: 'AES-GCM', length: 256 },
+		false,
+		['encrypt', 'decrypt']
+	);
+}
+
+async function encryptWithPassword(payload: Uint8Array, password: string): Promise<Uint8Array> {
+	const cryptoRef = requireCrypto();
+	const salt = toWebCryptoBytes(cryptoRef.getRandomValues(new Uint8Array(ENCRYPTION_SALT_BYTES)));
+	const iv = toWebCryptoBytes(cryptoRef.getRandomValues(new Uint8Array(ENCRYPTION_IV_BYTES)));
+	const key = await deriveKey(password, salt);
+	const encrypted = await cryptoRef.subtle.encrypt(
+		{ name: 'AES-GCM', iv },
+		key,
+		toWebCryptoBytes(payload)
+	);
+
+	const header = new Uint8Array(1 + ENCRYPTION_SALT_BYTES + ENCRYPTION_IV_BYTES);
+	header[0] = ENCRYPTION_VERSION;
+	header.set(salt, 1);
+	header.set(iv, 1 + ENCRYPTION_SALT_BYTES);
+
+	return concatBytes(header, new Uint8Array(encrypted));
+}
+
+async function decryptWithPassword(payload: Uint8Array, password: string): Promise<Uint8Array> {
+	const cryptoRef = requireCrypto();
+	const headerLength = 1 + ENCRYPTION_SALT_BYTES + ENCRYPTION_IV_BYTES;
+	if (payload.length < headerLength) {
+		throw new Error('Encrypted payload is too short.');
+	}
+
+	const version = payload[0];
+	if (version !== ENCRYPTION_VERSION) {
+		throw new Error('Unsupported encryption version.');
+	}
+
+	const saltStart = 1;
+	const ivStart = saltStart + ENCRYPTION_SALT_BYTES;
+	const cipherStart = ivStart + ENCRYPTION_IV_BYTES;
+	const salt = toWebCryptoBytes(payload.slice(saltStart, ivStart));
+	const iv = toWebCryptoBytes(payload.slice(ivStart, cipherStart));
+	const cipher = toWebCryptoBytes(payload.slice(cipherStart));
+
+	const key = await deriveKey(password, salt);
+	const decrypted = await cryptoRef.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+
+	return new Uint8Array(decrypted);
+}
+
 async function compressWithDictionary(inputBytes: Uint8Array): Promise<Uint8Array> {
 	return compress(inputBytes, {
 		quality: 11,
@@ -365,7 +471,7 @@ function detokenizeUrl(data: Uint8Array): string {
 /**
  * Compresses a string with Brotli + encodes using Base64.
  */
-export async function encode(input: string): Promise<string> {
+async function encodePlain(input: string): Promise<string> {
 	const inputBytes = textEncoder.encode(input);
 	const tokenizedBytes = tokenizeUrl(input);
 
@@ -404,7 +510,7 @@ export async function encode(input: string): Promise<string> {
 /**
  * Decodes from Base64 + decompresses with Brotli back to the original string.
  */
-export async function decode(data: string): Promise<string> {
+async function decodePlain(data: string): Promise<string> {
 	if (data.startsWith(RAW_PREFIX)) {
 		const rawBytes = urlDecode(data.slice(RAW_PREFIX.length));
 		return textDecoder.decode(rawBytes);
@@ -425,4 +531,35 @@ export async function decode(data: string): Promise<string> {
 	const decompressed: Uint8Array = await decompress(compressedBytes);
 
 	return textDecoder.decode(decompressed);
+}
+
+/**
+ * Compresses a string with Brotli + encodes using Base64.
+ * When a password is provided, the encoded payload is encrypted with AES-GCM.
+ */
+export async function encode(input: string, password?: string): Promise<string> {
+	const plain = await encodePlain(input);
+	if (!password) return plain;
+
+	const encrypted = await encryptWithPassword(textEncoder.encode(plain), password);
+	return `${PASSWORD_PREFIX}${urlEncode(encrypted)}`;
+}
+
+/**
+ * Decodes from Base64 + decompresses with Brotli back to the original string.
+ * When the payload is password-protected, a password must be supplied.
+ */
+export async function decode(data: string, password?: string): Promise<string> {
+	if (data.startsWith(PASSWORD_PREFIX)) {
+		if (!password) {
+			throw new Error('Password required to decode this link.');
+		}
+
+		const encryptedBytes = urlDecode(data.slice(PASSWORD_PREFIX.length));
+		const decrypted = await decryptWithPassword(encryptedBytes, password);
+		const unwrapped = textDecoder.decode(decrypted);
+		return decodePlain(unwrapped);
+	}
+
+	return decodePlain(data);
 }

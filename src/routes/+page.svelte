@@ -3,6 +3,7 @@
 	import { encode } from '$lib/brotli';
 	import CopyButton from '$lib/components/CopyButton.svelte';
 	import { ClipboardCheck, Clipboard } from 'lucide-svelte';
+	import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
 	async function shorten() {
 		const trimmed = url.trim();
@@ -11,36 +12,41 @@
 			return;
 		}
 
-		const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-		let result = await encode(normalized);
+		const usePassword = mode === 'protected';
+		let result = await encode(trimmed, usePassword ? password : undefined);
 
 		shortenUrl = `${page.url.origin}/s?${result}`;
 	}
 
 	let url = $state('');
+	let password = $state('');
 	let shortenUrl = $state('');
+	let mode = $state('standard');
 </script>
 
 <svelte:head>
-	<title>short | Shorten & Obfuscate URLs</title>
-	<meta name="description" content="Shorten and obfuscate URLs into compact, opaque links." />
+	<title>short | Shorten, Obfuscate & Secure URLs</title>
+	<meta
+		name="description"
+		content="Shorten, obfuscate, and secure URLs into compact, opaque links."
+	/>
 	<!-- Open Graph -->
-	<meta property="og:title" content="short | Shorten & Obfuscate URLs" />
+	<meta property="og:title" content="short | Shorten, Obfuscate & Secure URLs" />
 	<meta
 		property="og:description"
-		content="Shorten and obfuscate URLs into compact, opaque links."
+		content="Shorten, obfuscate, and secure URLs into compact, opaque links."
 	/>
 </svelte:head>
 
-<div class="mx-auto h-full max-w-3xl px-4 py-10">
+<div class="mx-auto h-full w-full max-w-3xl px-4 py-10">
 	<div class="grid gap-10">
 		<div class="space-y-8">
 			<header class="space-y-4">
 				<div class="space-y-2">
 					<h1 class="h1">short</h1>
 					<p class="text-sm text-surface-700-300 sm:text-base">
-						Shorten and obfuscate URLs into compact, opaque links. Everything happens in your
-						browser for instant, private, and secure results.
+						Shorten, obfuscate, and secure URLs into compact, opaque links. Everything happens in
+						your browser for instant, private, and secure results.
 					</p>
 				</div>
 				<div class="flex flex-wrap gap-2">
@@ -50,54 +56,118 @@
 				</div>
 			</header>
 			<section class="space-y-6 card preset-tonal p-6">
-				<form class="space-y-6" onsubmit={shorten} aria-describedby="helper">
-					<label class="label space-y-2">
-						<span class="label-text flex items-center justify-between text-surface-950-50">
-							<span>URL</span>
-							<span>
-								press <kbd class="kbd text-xs text-surface-950-50">↵</kbd> to confirm
-							</span>
+				<Tabs value={mode} onValueChange={(details) => (mode = details.value)}>
+					<Tabs.List class="whitespace-nowrap">
+						<Tabs.Trigger
+							class="flex-1 bg-transparent text-surface-950-50 brightness-100 hover:opacity-75"
+							value="standard"
+						>
+							Standard
+						</Tabs.Trigger>
+						<Tabs.Trigger
+							class="flex-1 bg-transparent text-surface-950-50 brightness-100 hover:opacity-75"
+							value="protected"
+						>
+							Protected
+						</Tabs.Trigger>
+						<Tabs.Indicator />
+					</Tabs.List>
+					<Tabs.Content value="standard">
+						<form class="space-y-6" onsubmit={shorten} aria-describedby="helper">
+							<label class="label space-y-2">
+								<span class="label-text text-surface-950-50"> URL </span>
+								<input
+									class="input text-surface-950-50"
+									type="url"
+									autocomplete="url"
+									required
+									placeholder="Paste URL to shorten and obfuscate..."
+									bind:value={url}
+								/>
+								<span class="label-text text-surface-700-300">
+									Only supports full URLs requiring <code class="code">http://</code> or
+									<code class="code">https://</code>.
+								</span>
+							</label>
+							<div class="flex flex-wrap items-center gap-3">
+								<button type="submit" class="btn preset-filled sm:w-auto">Generate link</button>
+								<p class="text-xs text-surface-700-300">Fast, simple, and ready to share.</p>
+							</div>
+						</form>
+					</Tabs.Content>
+					<Tabs.Content value="protected">
+						<form class="space-y-6" onsubmit={shorten} aria-describedby="helper">
+							<label class="label space-y-2">
+								<span class="label-text text-surface-950-50"> URL </span>
+								<input
+									class="input text-surface-950-50"
+									type="url"
+									autocomplete="url"
+									required
+									placeholder="Paste URL to shorten, obfuscate and protect..."
+									bind:value={url}
+								/>
+								<span class="label-text text-surface-700-300">
+									Only supports full URLs requiring <code class="code">http://</code> or
+									<code class="code">https://</code>.
+								</span>
+							</label>
+							<label class="label space-y-2">
+								<span class="label-text text-surface-950-50">Password</span>
+								<input
+									class="input text-surface-950-50"
+									type="password"
+									autocomplete="new-password"
+									pattern="^\S+$"
+									required
+									placeholder="Add a password to protect this link..."
+									bind:value={password}
+								/>
+								<span class="label-text text-surface-700-300">
+									Anyone opening the shortened link will need this password.
+								</span>
+							</label>
+							<div class="flex flex-wrap items-center gap-3">
+								<button type="submit" class="btn preset-filled sm:w-auto">
+									Generate protected link
+								</button>
+								<p class="text-xs text-surface-700-300">Encrypted, private, and safe to share.</p>
+							</div>
+						</form>
+					</Tabs.Content>
+				</Tabs>
+				<label class="label space-y-2">
+					<span class="label-text flex items-center justify-between text-surface-950-50">
+						<span class="flex items-center gap-2">
+							<span>Generated URL</span>
 						</span>
-						<!-- svelte-ignore a11y_autofocus -->
+						{#if shortenUrl}
+							<a class="anchor" href={shortenUrl} target="_blank" rel="noreferrer">
+								Open in new tab
+							</a>
+						{/if}
+					</span>
+					<div class="input-group grid-cols-[1fr_auto]">
 						<input
-							class="input text-surface-950-50"
+							readonly
+							class="ig-input font-mono text-sm text-surface-950-50"
 							type="text"
-							autocomplete="url"
-							autofocus
-							required
-							placeholder="Paste URL to shorten and obfuscate..."
-							bind:value={url}
+							placeholder="Your shortened link will appear here..."
+							bind:value={shortenUrl}
 						/>
-						<span class="label-text text-surface-700-300">
-							Supports full URLs or bare domains. We auto-add <code class="code">https://</code> when
-							missing.
-						</span>
-					</label>
-					<div class="flex flex-wrap items-center gap-3">
-						<button type="submit" class="btn preset-filled sm:w-auto"> Shorten & Obfuscate </button>
-						<p class="text-xs text-surface-700-300">Compact, readable, and ready to share.</p>
+						<CopyButton text={shortenUrl} class="ig-btn preset-filled" disabled={!shortenUrl}>
+							{#snippet child({ copied })}
+								{#if copied}
+									<ClipboardCheck class="mr-2 size-4" />
+									<span class="block">Copied</span>
+								{:else}
+									<Clipboard class="mr-2 size-4" />
+									<span>Copy</span>
+								{/if}
+							{/snippet}
+						</CopyButton>
 					</div>
-				</form>
-				<div class="input-group grid-cols-[1fr_auto]">
-					<input
-						readonly
-						class="ig-input text-surface-950-50"
-						type="text"
-						placeholder="Empty"
-						bind:value={shortenUrl}
-					/>
-					<CopyButton text={shortenUrl} class="ig-btn preset-filled">
-						{#snippet child({ copied })}
-							{#if copied}
-								<ClipboardCheck class="mr-2 size-4" />
-								<span class="block">Copied</span>
-							{:else}
-								<Clipboard class="mr-2 size-4" />
-								<span>Copy</span>
-							{/if}
-						{/snippet}
-					</CopyButton>
-				</div>
+				</label>
 			</section>
 
 			<div class="text-center text-xs">
