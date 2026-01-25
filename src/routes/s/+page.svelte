@@ -54,10 +54,10 @@
 </script>
 
 <svelte:head>
-	<title>Redirecting - short | Shorten, Obfuscate & Secure URLs</title>
+	<title>Redirecting - opaq | Obfuscate, Compress & Secure URLs</title>
 	<meta name="description" content="Redirecting to the original URL." />
 	<!-- Open Graph -->
-	<meta property="og:title" content="Redirecting - short | Shorten, Obfuscate & Secure URLs" />
+	<meta property="og:title" content="Redirecting - opaq | Obfuscate, Compress & Secure URLs" />
 	<meta property="og:description" content="Redirecting to the original URL." />
 </svelte:head>
 

@@ -1,6 +1,6 @@
-# short
+# opaq
 
-Shorten, obfuscate, and secure URLs into compact, opaque links. Everything happens in your browser for instant, private, and secure results. Built with `Svelte` and `Skeleton`.
+Obfuscate, compress, and secure URLs into compact, opaque links. Everything happens in your browser for instant, private, and secure results. Built with `Svelte` and `Skeleton`.
 
 ## Highlights
 
@@ -38,7 +38,7 @@ If you want to inspect the exact steps, check `src/lib/brotli.ts` and `src/lib/b
 src/
 ├─ lib/               # Encoding helpers, clipboard action, shared UI
 ├─ routes/
-│  ├─ +page.svelte    # Main shortening UI
+│  ├─ +page.svelte    # Main encoding UI
 │  ├─ s/+page.svelte  # Redirector that decodes and navigates
 │  ├─ +layout.svelte  # Layout wrapper
 │  └─ layout.css      # Skeleton/Tailwind theme overrides
@@ -64,13 +64,13 @@ bun run preview # serve the production build locally
 
 ## Contributing & Issues
 
-Although **clash** is out of **beta**, I still welcome:
+I warmly welcome:
 
 - Bug reports
 - Feature requests
 - Pull requests
 
-Please open issues or PRs on [GitHub](https://github.com/nwrenger/short/issues).
+Please open issues or PRs on [GitHub](https://github.com/nwrenger/opaq/issues).
 
 ## License
 

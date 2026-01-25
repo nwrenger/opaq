@@ -1,12 +1,12 @@
 {
-	"name": "short",
+	"name": "opaq",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"postbuild": "bunx svelte-sitemap -d https://short.nwrenger.dev -i '404.html' -c weekly -r",
+		"postbuild": "bunx svelte-sitemap -d https://opaq.nwrenger.dev -i '404.html' -c weekly -r",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

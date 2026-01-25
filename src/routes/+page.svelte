@@ -6,10 +6,10 @@
 	import { ClipboardCheck, Clipboard } from 'lucide-svelte';
 	import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
-	async function shorten() {
+	async function generateLink() {
 		const trimmed = url.trim();
 		if (!trimmed) {
-			shortenUrl = '';
+			generatedUrl = '';
 			return;
 		}
 
@@ -17,26 +17,26 @@
 		const usePassword = mode === 'protected';
 		let result = await encode(sanitized, usePassword ? password : undefined);
 
-		shortenUrl = `${page.url.origin}/s?${result}`;
+		generatedUrl = `${page.url.origin}/s?${result}`;
 	}
 
 	let url = $state('');
 	let password = $state('');
-	let shortenUrl = $state('');
+	let generatedUrl = $state('');
 	let mode = $state('standard');
 </script>
 
 <svelte:head>
-	<title>short | Shorten, Obfuscate & Secure URLs</title>
+	<title>opaq | Obfuscate, Compress & Secure URLs</title>
 	<meta
 		name="description"
-		content="Shorten, obfuscate, and secure URLs into compact, opaque links."
+		content="Obfuscate, compress, and secure URLs into compact, opaque links."
 	/>
 	<!-- Open Graph -->
-	<meta property="og:title" content="short | Shorten, Obfuscate & Secure URLs" />
+	<meta property="og:title" content="opaq | Obfuscate, Compress & Secure URLs" />
 	<meta
 		property="og:description"
-		content="Shorten, obfuscate, and secure URLs into compact, opaque links."
+		content="Obfuscate, compress, and secure URLs into compact, opaque links."
 	/>
 </svelte:head>
 
@@ -45,9 +45,9 @@
 		<div class="space-y-8">
 			<header class="space-y-4">
 				<div class="space-y-2">
-					<h1 class="h1">short</h1>
+					<h1 class="h1">opaq</h1>
 					<p class="text-sm text-surface-700-300 sm:text-base">
-						Shorten, obfuscate, and secure URLs into compact, opaque links. Everything happens in
+						Obfuscate, compress, and secure URLs into compact, opaque links. Everything happens in
 						your browser for instant, private, and secure results.
 					</p>
 				</div>
@@ -75,7 +75,7 @@
 						<Tabs.Indicator />
 					</Tabs.List>
 					<Tabs.Content value="standard">
-						<form class="space-y-6" onsubmit={shorten} aria-describedby="helper">
+						<form class="space-y-6" onsubmit={generateLink} aria-describedby="helper">
 							<label class="label space-y-2">
 								<span class="label-text text-surface-950-50"> URL </span>
 								<input
@@ -83,7 +83,7 @@
 									type="url"
 									autocomplete="url"
 									required
-									placeholder="Paste URL to shorten and obfuscate..."
+									placeholder="Paste URL to obfuscate and compress..."
 									bind:value={url}
 								/>
 								<span class="label-text text-surface-700-300">
@@ -99,7 +99,7 @@
 						</form>
 					</Tabs.Content>
 					<Tabs.Content value="protected">
-						<form class="space-y-6" onsubmit={shorten} aria-describedby="helper">
+						<form class="space-y-6" onsubmit={generateLink} aria-describedby="helper">
 							<label class="label space-y-2">
 								<span class="label-text text-surface-950-50"> URL </span>
 								<input
@@ -107,7 +107,7 @@
 									type="url"
 									autocomplete="url"
 									required
-									placeholder="Paste URL to shorten, obfuscate and protect..."
+									placeholder="Paste URL to obfuscate, compress and protect..."
 									bind:value={url}
 								/>
 								<span class="label-text text-surface-700-300">
@@ -128,7 +128,7 @@
 									bind:value={password}
 								/>
 								<span class="label-text text-surface-700-300">
-									Anyone opening the shortened link will need this password.
+									Anyone opening the protected link will need this password.
 								</span>
 							</label>
 							<div class="flex flex-wrap items-center gap-3">
@@ -145,8 +145,8 @@
 						<span class="flex items-center gap-2">
 							<span>Generated URL</span>
 						</span>
-						{#if shortenUrl}
-							<a class="anchor" href={shortenUrl} target="_blank" rel="noreferrer">
+						{#if generatedUrl}
+							<a class="anchor" href={generatedUrl} target="_blank" rel="noreferrer">
 								Open in new tab
 							</a>
 						{/if}
@@ -156,10 +156,10 @@
 							readonly
 							class="ig-input font-mono text-sm text-surface-950-50"
 							type="text"
-							placeholder="Your shortened link will appear here..."
-							bind:value={shortenUrl}
+							placeholder="Your cloaked link will appear here..."
+							bind:value={generatedUrl}
 						/>
-						<CopyButton text={shortenUrl} class="ig-btn preset-filled" disabled={!shortenUrl}>
+						<CopyButton text={generatedUrl} class="ig-btn preset-filled" disabled={!generatedUrl}>
 							{#snippet child({ copied })}
 								{#if copied}
 									<ClipboardCheck class="mr-2 size-4" />

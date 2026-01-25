@@ -138,7 +138,7 @@ function isTrackingParam(name: string) {
 }
 
 /**
- * Remove empty and tracking query parameters to shorten URLs while preserving intent.
+ * Remove empty and tracking query parameters to streamline URLs while preserving intent.
  */
 export function sanitizeUrl(rawUrl: string): string {
 	try {

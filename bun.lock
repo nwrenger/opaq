@@ -2,7 +2,7 @@
   "lockfileVersion": 1,
   "workspaces": {
     "": {
-      "name": "short",
+      "name": "opaq",
       "devDependencies": {
         "@skeletonlabs/skeleton": "^4.11.0",
         "@skeletonlabs/skeleton-svelte": "^4.11.0",

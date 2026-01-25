@@ -3,5 +3,5 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://short.nwrenger.dev/sitemap.xml
-Host: short.nwrenger.dev
+Sitemap: https://opaq.nwrenger.dev/sitemap.xml
+Host: opaq.nwrenger.dev
