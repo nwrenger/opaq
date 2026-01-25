@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { encode } from '$lib/brotli';
 	import CopyButton from '$lib/components/CopyButton.svelte';
+	import { sanitizeUrl } from '$lib/sanitizeUrl';
 	import { ClipboardCheck, Clipboard } from 'lucide-svelte';
 	import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
@@ -12,8 +13,9 @@
 			return;
 		}
 
+		const sanitized = sanitizeUrl(trimmed);
 		const usePassword = mode === 'protected';
-		let result = await encode(trimmed, usePassword ? password : undefined);
+		let result = await encode(sanitized, usePassword ? password : undefined);
 
 		shortenUrl = `${page.url.origin}/s?${result}`;
 	}
@@ -86,7 +88,8 @@
 								/>
 								<span class="label-text text-surface-700-300">
 									Only supports full URLs requiring <code class="code">http://</code> or
-									<code class="code">https://</code>.
+									<code class="code">https://</code>. Tracking parameters (utm, fbclid, etc.) are
+									removed automatically.
 								</span>
 							</label>
 							<div class="flex flex-wrap items-center gap-3">
@@ -109,7 +112,8 @@
 								/>
 								<span class="label-text text-surface-700-300">
 									Only supports full URLs requiring <code class="code">http://</code> or
-									<code class="code">https://</code>.
+									<code class="code">https://</code>. Tracking parameters (utm, fbclid, etc.) are
+									removed automatically.
 								</span>
 							</label>
 							<label class="label space-y-2">
