@@ -173,14 +173,10 @@
 				</Tabs>
 				<label class="label space-y-2">
 					<span class="label-text flex items-center justify-between text-surface-950-50">
-						<span class="flex flex-col gap-1">
-							<span class="flex items-center gap-2">
-								<span>Generated URL</span>
-							</span>
-							<span class="text-xs text-surface-700-300"
-								>Compression: {compressionSummary || 'None'}</span
-							>
+						<span class="flex items-center gap-2">
+							<span>Generated URL</span>
 						</span>
+
 						{#if generatedUrl}
 							<a class="anchor" href={generatedUrl} target="_blank" rel="noreferrer">
 								Open in new tab
@@ -207,6 +203,9 @@
 							{/snippet}
 						</CopyButton>
 					</div>
+					<span class="label-text text-surface-700-300">
+						Compression: {compressionSummary || 'None'}
+					</span>
 				</label>
 			</section>
 
