@@ -69,7 +69,7 @@
 				</div>
 				<div class="flex w-full flex-wrap items-center justify-between gap-3">
 					<a
-						href="https://github.com/nwrenger/clash"
+						href="https://github.com/nwrenger/opaq"
 						target="_blank"
 						class="btn h-9 preset-tonal text-surface-950-50"
 					>
