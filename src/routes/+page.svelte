@@ -56,7 +56,7 @@
 	/>
 </svelte:head>
 
-<div class="mx-auto h-full w-full max-w-3xl px-4 py-10">
+<div class="mx-auto w-full max-w-3xl px-4 py-10">
 	<div class="grid gap-10">
 		<div class="space-y-8">
 			<header class="space-y-4">
