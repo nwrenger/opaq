@@ -3,13 +3,27 @@
 	import { encode } from '$lib/brotli';
 	import CopyButton from '$lib/components/CopyButton.svelte';
 	import { sanitizeUrl } from '$lib/sanitizeUrl';
-	import { ClipboardCheck, Clipboard } from 'lucide-svelte';
+	import { ClipboardCheck, Clipboard, Github, ExternalLink } from 'lucide-svelte';
 	import { Tabs } from '@skeletonlabs/skeleton-svelte';
+
+	function formatCompression(original: string, encoded: string): string {
+		const originalBytes = original.length;
+		const encodedBytes = encoded.length;
+		if (!originalBytes || !encodedBytes) return '';
+
+		const delta = ((originalBytes - encodedBytes) / originalBytes) * 100;
+		if (!Number.isFinite(delta)) return '';
+
+		const magnitude = Math.abs(delta);
+		const formatted = magnitude < 1 ? magnitude.toFixed(1) : Math.round(magnitude).toString();
+		return delta >= 0 ? `${formatted}% smaller` : `${formatted}% larger`;
+	}
 
 	async function generateLink() {
 		const trimmed = url.trim();
 		if (!trimmed) {
 			generatedUrl = '';
+			compressionSummary = '';
 			return;
 		}
 
@@ -18,11 +32,13 @@
 		let result = await encode(sanitized, usePassword ? password : undefined);
 
 		generatedUrl = `${page.url.origin}/r?${result}`;
+		compressionSummary = formatCompression(sanitized, result);
 	}
 
 	let url = $state('');
 	let password = $state('');
 	let generatedUrl = $state('');
+	let compressionSummary = $state('');
 	let mode = $state('standard');
 </script>
 
@@ -51,10 +67,22 @@
 						your browser for instant, private, and secure results.
 					</p>
 				</div>
-				<div class="flex flex-wrap gap-2">
-					<span class="badge preset-tonal text-surface-950-50">Opaque output</span>
-					<span class="badge preset-tonal text-surface-950-50">Client-side encoding</span>
-					<span class="badge preset-tonal text-surface-950-50">Fast redirect</span>
+				<div class="flex w-full flex-wrap items-center justify-between gap-3">
+					<a
+						href="https://github.com/nwrenger/clash"
+						target="_blank"
+						class="btn h-9 preset-tonal text-surface-950-50"
+					>
+						<Github size={18} />
+						Star on GitHub
+						<ExternalLink size={16} class="opacity-60" />
+					</a>
+
+					<ul class="flex flex-wrap items-center gap-2">
+						<li class="badge preset-tonal text-surface-950-50">Opaque output</li>
+						<li class="badge preset-tonal text-surface-950-50">Client-side encoding</li>
+						<li class="badge preset-tonal text-surface-950-50">Fast redirect</li>
+					</ul>
 				</div>
 			</header>
 			<section class="space-y-6 card preset-tonal p-6">
@@ -130,6 +158,10 @@
 									Anyone opening the protected link will need this password.
 								</span>
 							</label>
+							<div class="space-y-2 text-xs text-surface-700-300">
+								<p class="text-surface-950-50">Encryption</p>
+								<p>AES-GCM 256-bit with PBKDF2 (SHA-256, 100k iterations).</p>
+							</div>
 							<div class="flex flex-wrap items-center gap-3">
 								<button type="submit" class="btn preset-filled sm:w-auto">
 									Generate protected link
@@ -141,8 +173,13 @@
 				</Tabs>
 				<label class="label space-y-2">
 					<span class="label-text flex items-center justify-between text-surface-950-50">
-						<span class="flex items-center gap-2">
-							<span>Generated URL</span>
+						<span class="flex flex-col gap-1">
+							<span class="flex items-center gap-2">
+								<span>Generated URL</span>
+							</span>
+							<span class="text-xs text-surface-700-300"
+								>Compression: {compressionSummary || 'None'}</span
+							>
 						</span>
 						{#if generatedUrl}
 							<a class="anchor" href={generatedUrl} target="_blank" rel="noreferrer">
