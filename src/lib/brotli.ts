@@ -10,8 +10,8 @@ if (browser) {
 	decompress = pkg.decompress;
 }
 
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
+export const textEncoder = new TextEncoder();
+export const textDecoder = new TextDecoder();
 
 /**
  * Brotli custom dictionary.

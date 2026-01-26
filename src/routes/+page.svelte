@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { encode } from '$lib/brotli';
+	import { encode, textEncoder } from '$lib/brotli';
 	import CopyButton from '$lib/components/CopyButton.svelte';
 	import { sanitizeUrl } from '$lib/sanitizeUrl';
 	import { ClipboardCheck, Clipboard, Github, ExternalLink } from 'lucide-svelte';
 	import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
 	function formatCompression(original: string, encoded: string): string {
-		const originalBytes = original.length;
-		const encodedBytes = encoded.length;
+		const originalBytes = textEncoder.encode(original).length;
+		const encodedBytes = textEncoder.encode(encoded).length;
 		if (!originalBytes || !encodedBytes) return '';
 
 		const delta = ((originalBytes - encodedBytes) / originalBytes) * 100;
