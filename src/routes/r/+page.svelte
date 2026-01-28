@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { decode, PASSWORD_PREFIX } from '$lib/brotli';
 	import { onMount } from 'svelte';
@@ -74,7 +75,7 @@
 				<p class="text-sm text-surface-700-300">
 					Enter the password to unlock this protected link.
 				</p>
-				<form class="space-y-3" onsubmit={unlock} aria-describedby="helper">
+				<form class="space-y-3" onsubmit={unlock} aria-describedby="helper" data-sveltekit-noscroll>
 					<label class="label space-y-2 text-start">
 						<input
 							class="input text-surface-950-50"

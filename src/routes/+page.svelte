@@ -5,6 +5,7 @@
 	import { sanitizeUrl } from '$lib/sanitizeUrl';
 	import { ClipboardCheck, Clipboard, Github, ExternalLink } from 'lucide-svelte';
 	import { Tabs } from '@skeletonlabs/skeleton-svelte';
+	import { enhance } from '$app/forms';
 
 	function formatCompression(original: string, encoded: string): string {
 		const originalBytes = textEncoder.encode(original).length;
@@ -103,7 +104,12 @@
 						<Tabs.Indicator />
 					</Tabs.List>
 					<Tabs.Content value="standard">
-						<form class="space-y-6" onsubmit={generateLink} aria-describedby="helper">
+						<form
+							class="space-y-6"
+							onsubmit={generateLink}
+							aria-describedby="helper"
+							data-sveltekit-noscroll
+						>
 							<label class="label space-y-2">
 								<span class="label-text text-surface-950-50"> URL </span>
 								<input
@@ -127,7 +133,12 @@
 						</form>
 					</Tabs.Content>
 					<Tabs.Content value="protected">
-						<form class="space-y-6" onsubmit={generateLink} aria-describedby="helper">
+						<form
+							class="space-y-6"
+							onsubmit={generateLink}
+							aria-describedby="helper"
+							data-sveltekit-noscroll
+						>
 							<label class="label space-y-2">
 								<span class="label-text text-surface-950-50"> URL </span>
 								<input
