@@ -159,7 +159,6 @@
 								<span class="label-text text-surface-950-50">Password</span>
 								<input
 									class="input text-surface-950-50"
-									type="password"
 									pattern="^\S+$"
 									required
 									placeholder="Add a password to protect this link..."
